@@ -1,7 +1,7 @@
-// src/utils/constants.ts
+// Файл: /src/utils/constants.ts
 
 /**
- * Константы приложения.
+ * Модуль содержит константы приложения.
  */
 
 /**
@@ -18,10 +18,3 @@ export const API_URL = `${API_ORIGIN}/api/weblarek`;
  * URL для контента CDN.
  */
 export const CDN_URL = `${API_ORIGIN}/content/weblarek`;
-
-/**
- * Настройки приложения.
- */
-export const settings = {
-  // Добавьте необходимые настройки.
-};

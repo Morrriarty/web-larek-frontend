@@ -1,11 +1,15 @@
-// src/views/ProductListView.ts
+// Файл: /src/views/ProductListView.ts
+
+/**
+ * Модуль предоставляет класс `ProductListView` для отображения списка товаров.
+ */
 
 import { Product } from '../types';
-import { EventEmitter } from '../utils/EventEmitter';
+import { EventEmitter } from '../components/base/events';
 import { CDN_URL } from '../utils/constants';
 
 /**
- * Класс `ProductListView` отвечает за отображение списка продуктов.
+ * Класс `ProductListView` отвечает за отображение списка товаров на главной странице.
  */
 export class ProductListView {
   private container: HTMLElement;
@@ -13,9 +17,9 @@ export class ProductListView {
   private template: HTMLTemplateElement;
 
   /**
-   * Создает экземпляр `ProductListView`.
-   * @param container - Контейнер для отображения списка продуктов.
-   * @param emitter - Экземпляр `EventEmitter` для управления событиями.
+   * Создает экземпляр класса `ProductListView`.
+   * @param container - Контейнер для размещения списка товаров.
+   * @param emitter - Экземпляр EventEmitter для событийного взаимодействия.
    */
   constructor(container: HTMLElement, emitter: EventEmitter) {
     this.container = container;
@@ -28,26 +32,25 @@ export class ProductListView {
   }
 
   /**
-   * Рендерит список продуктов.
-   * @param products - Массив продуктов для отображения.
+   * Рендерит список товаров.
+   * @param products - Массив товаров для отображения.
    */
   render(products: Product[]): void {
     this.container.innerHTML = '';
     products.forEach((product) => {
-      const card = this.createProductCard(product);
-      this.container.appendChild(card);
+      const productCard = this.createProductCard(product);
+      this.container.appendChild(productCard);
     });
   }
 
   /**
-   * Создает карточку продукта.
-   * @param product - Объект продукта.
-   * @returns Элемент карточки продукта.
+   * Создает карточку товара для каталога.
+   * @param product - Объект товара.
+   * @returns Элемент карточки товара.
    */
   private createProductCard(product: Product): HTMLElement {
     const cardElement = this.template.content.firstElementChild!.cloneNode(true) as HTMLElement;
 
-    // Обновляем данные карточки
     const cardTitle = cardElement.querySelector('.card__title');
     if (cardTitle) {
       cardTitle.textContent = product.title;
@@ -67,13 +70,34 @@ export class ProductListView {
     const cardCategory = cardElement.querySelector('.card__category');
     if (cardCategory) {
       cardCategory.textContent = product.category;
+
+      // Применяем класс категории для цвета
+      const categoryClass = this.getCategoryClass(product.category);
+      if (categoryClass) {
+        cardCategory.classList.add(categoryClass);
+      }
     }
 
-    // Обработчик клика на карточку
     cardElement.addEventListener('click', () => {
       this.emitter.emit('productSelected', product.id);
     });
 
     return cardElement;
+  }
+
+  /**
+   * Возвращает класс категории на основе имени категории.
+   * @param category - Название категории.
+   * @returns Имя класса категории.
+   */
+  private getCategoryClass(category: string): string | null {
+    const categoryClasses: Record<string, string> = {
+      'софт-скил': 'card__category_soft',
+      'другое': 'card__category_other',
+      'жесткий-скил': 'card__category_hard',
+      'дополнительное': 'card__category_additional',
+      'кнопка': 'card__category_button',
+    };
+    return categoryClasses[category.toLowerCase()] || null;
   }
 }

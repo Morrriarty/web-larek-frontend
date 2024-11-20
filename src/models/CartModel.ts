@@ -1,10 +1,14 @@
-// src/models/CartModel.ts
+// Файл: /src/models/CartModel.ts
 
-import { EventEmitter } from '../utils/EventEmitter';
+/**
+ * Модуль предоставляет класс `CartModel` для управления корзиной товаров.
+ */
+
+import { EventEmitter } from '../components/base/events';
 import { Product, PaymentMethod } from '../types';
 
 /**
- * Интерфейс для деталей заказа.
+ * Интерфейс для хранения деталей заказа.
  */
 interface OrderDetails {
   payment: PaymentMethod;
@@ -12,7 +16,7 @@ interface OrderDetails {
 }
 
 /**
- * Класс `CartModel` отвечает за управление корзиной покупок.
+ * Класс `CartModel` управляет состоянием корзины и деталями заказа.
  */
 export class CartModel {
   private items: Product[] = [];
@@ -20,8 +24,8 @@ export class CartModel {
   private orderDetails: OrderDetails | null = null;
 
   /**
-   * Создает экземпляр `CartModel`.
-   * @param emitter - Экземпляр `EventEmitter` для управления событиями.
+   * Создает экземпляр класса `CartModel`.
+   * @param emitter - Экземпляр EventEmitter для событийного взаимодействия.
    */
   constructor(emitter: EventEmitter) {
     this.emitter = emitter;
@@ -29,16 +33,21 @@ export class CartModel {
 
   /**
    * Добавляет товар в корзину.
-   * @param item - Объект товара для добавления.
+   * @param item - Товар для добавления.
    */
   addItem(item: Product): void {
+    if (this.items.some((existingItem) => existingItem.id === item.id)) {
+      alert('Этот товар уже в корзине');
+      return;
+    }
+
     this.items.push(item);
     this.emitter.emit('cartUpdated');
   }
 
   /**
    * Удаляет товар из корзины по его ID.
-   * @param id - Идентификатор товара для удаления.
+   * @param id - Идентификатор товара.
    */
   removeItem(id: string): void {
     this.items = this.items.filter((item) => item.id !== id);
@@ -47,15 +56,15 @@ export class CartModel {
 
   /**
    * Возвращает список товаров в корзине.
-   * @returns Массив товаров в корзине.
+   * @returns Массив товаров.
    */
   getItems(): Product[] {
     return this.items;
   }
 
   /**
-   * Возвращает общую стоимость товаров в корзине.
-   * @returns Суммарная стоимость товаров.
+   * Вычисляет общую стоимость товаров в корзине.
+   * @returns Общая стоимость.
    */
   getTotal(): number {
     return this.items.reduce((total, item) => total + (item.price || 0), 0);
@@ -72,7 +81,7 @@ export class CartModel {
 
   /**
    * Устанавливает детали заказа.
-   * @param details - Объект с деталями заказа.
+   * @param details - Детали заказа.
    */
   setOrderDetails(details: OrderDetails): void {
     this.orderDetails = details;
@@ -80,13 +89,21 @@ export class CartModel {
 
   /**
    * Возвращает детали заказа.
-   * @returns Объект с деталями заказа.
-   * @throws Ошибка, если детали заказа не установлены.
+   * @returns Детали заказа.
    */
   getOrderDetails(): OrderDetails {
     if (!this.orderDetails) {
       throw new Error('Детали заказа не установлены');
     }
     return this.orderDetails;
+  }
+
+  /**
+   * Проверяет наличие товара в корзине по его ID.
+   * @param id - Идентификатор товара.
+   * @returns `true`, если товар есть в корзине, иначе `false`.
+   */
+  hasItem(id: string): boolean {
+    return this.items.some((item) => item.id === id);
   }
 }

@@ -1,20 +1,24 @@
-// src/views/CartView.ts
-
-import { Product } from '../types';
-import { EventEmitter } from '../utils/EventEmitter';
-import { CDN_URL } from '../utils/constants';
+// Файл: /src/views/CartView.ts
 
 /**
- * Класс `CartView` отвечает за отображение корзины.
+ * Модуль предоставляет класс `CartView` для отображения корзины товаров.
+ */
+
+import { Product } from '../types';
+import { EventEmitter } from '../components/base/events';
+import { Card } from './Card';
+
+/**
+ * Класс `CartView` отвечает за отображение корзины товаров.
  */
 export class CartView {
   private emitter: EventEmitter;
   private template: HTMLTemplateElement;
-  private itemTemplate: HTMLTemplateElement;
+  private card: Card;
 
   /**
-   * Создает экземпляр `CartView`.
-   * @param emitter - Экземпляр `EventEmitter` для управления событиями.
+   * Создает экземпляр класса `CartView`.
+   * @param emitter - Экземпляр EventEmitter для событийного взаимодействия.
    */
   constructor(emitter: EventEmitter) {
     this.emitter = emitter;
@@ -24,16 +28,12 @@ export class CartView {
     }
     this.template = templateElement;
 
-    const itemTemplateElement = document.getElementById('card-basket') as HTMLTemplateElement;
-    if (!itemTemplateElement) {
-      throw new Error('Template #card-basket not found');
-    }
-    this.itemTemplate = itemTemplateElement;
+    this.card = new Card(emitter);
   }
 
   /**
    * Рендерит корзину с товарами.
-   * @param items - Массив товаров в корзине.
+   * @param items - Список товаров в корзине.
    * @param total - Общая стоимость товаров.
    * @returns Элемент корзины для отображения.
    */
@@ -44,36 +44,7 @@ export class CartView {
     listElement.innerHTML = '';
 
     items.forEach((item, index) => {
-      const listItem = this.itemTemplate.content.firstElementChild!.cloneNode(true) as HTMLElement;
-
-      const itemIndex = listItem.querySelector('.basket__item-index');
-      if (itemIndex) {
-        itemIndex.textContent = (index + 1).toString();
-      }
-
-      const itemTitle = listItem.querySelector('.card__title');
-      if (itemTitle) {
-        itemTitle.textContent = item.title;
-      }
-
-      const itemPrice = listItem.querySelector('.card__price');
-      if (itemPrice) {
-        itemPrice.textContent = `${item.price ?? 0} синапсов`;
-      }
-
-      const itemImage = listItem.querySelector('.card__image') as HTMLImageElement;
-      if (itemImage) {
-        itemImage.src = `${CDN_URL}/${item.image}`;
-        itemImage.alt = item.title;
-      }
-
-      const deleteButton = listItem.querySelector('.basket__item-delete') as HTMLButtonElement;
-      if (deleteButton) {
-        deleteButton.addEventListener('click', () => {
-          this.emitter.emit('removeFromCart', item.id);
-        });
-      }
-
+      const listItem = this.card.render(item, index);
       listElement.appendChild(listItem);
     });
 

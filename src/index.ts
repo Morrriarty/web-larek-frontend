@@ -1,49 +1,49 @@
-// src/index.ts
+// Файл: /src/index.ts
 
 import './scss/styles.scss';
 import { APIClientImpl } from './api/APIClient';
 import { ProductModel } from './models/ProductModel';
 import { CartModel } from './models/CartModel';
+import { ProductService } from './api/ProductService';
 import { ProductListView } from './views/ProductListView';
 import { ProductDetailView } from './views/ProductDetailView';
 import { CartView } from './views/CartView';
 import { Modal } from './views/Modal';
-import { FormView } from './views/FormView';
-import { EventEmitter } from './utils/EventEmitter';
+import { EventEmitter } from './components/base/events';
 import { Product, Order, PaymentMethod } from './types';
 import { API_URL } from './utils/constants';
-
-// Инициализация
+import { Page } from './utils/Page';
+import { ContactsForm } from './views/ContactsForm';
+import { OrderForm } from './views/OrderForm';
 
 const apiClient = new APIClientImpl(API_URL);
 const emitter = new EventEmitter();
+const page = new Page();
 
-// Модели
-const productModel = new ProductModel(apiClient, emitter);
+const productService = new ProductService(apiClient);
+const productModel = new ProductModel(emitter);
 const cartModel = new CartModel(emitter);
-
-// Отображения
 
 const productContainer = document.querySelector('.gallery') as HTMLElement;
 const productListView = new ProductListView(productContainer, emitter);
 
-// Инициализация основного модального окна
 const modalElement = document.getElementById('modal-container') as HTMLElement;
 const modal = new Modal(modalElement, emitter);
 
-const productDetailView = new ProductDetailView(emitter);
-const formView = new FormView(emitter);
+const productDetailView = new ProductDetailView(
+  emitter,
+  (productId: string) => cartModel.getItems().some((item) => item.id === productId)
+);
 
 // Загрузка продуктов
-productModel.fetchProducts();
+productService.fetchProducts().then((products) => {
+  productModel.setProducts(products);
+  emitter.emit('productsLoaded', products);
+});
 
 // Обработчики событий
-
 emitter.on('productsLoaded', (products: Product[]) => {
   productListView.render(products);
-
-  // После загрузки продуктов инициализируем начальное модальное окно
-  initializeInitialModal();
 });
 
 emitter.on('productSelected', (productId: string) => {
@@ -67,13 +67,8 @@ emitter.on('removeFromCart', (productId: string) => {
 emitter.on('cartUpdated', () => {
   const items = cartModel.getItems();
   const total = cartModel.getTotal();
+  page.setBasketCount(items.length);
 
-  const cartCount = document.querySelector('.header__basket-counter') as HTMLElement;
-  if (cartCount) {
-    cartCount.textContent = items.length.toString();
-  }
-
-  // Обновляем содержимое корзины, если она открыта
   if (modal.isOpen() && modal.getContentType() === 'cart') {
     const cartView = new CartView(emitter);
     const cartContent = cartView.render(items, total);
@@ -81,7 +76,6 @@ emitter.on('cartUpdated', () => {
   }
 });
 
-// Обработчик для открытия корзины при нажатии на кнопку корзины
 const basketButton = document.querySelector('.header__basket') as HTMLElement;
 if (basketButton) {
   basketButton.addEventListener('click', () => {
@@ -95,25 +89,24 @@ if (basketButton) {
   });
 }
 
+// Изменяем обработчик на использование нового класса OrderForm
 emitter.on('checkout', () => {
-  // Используем форму из шаблона
-  const formElement = formView.getOrderForm();
+  const orderFormInstance = new OrderForm(emitter);
+  const formElement = orderFormInstance.getForm();
   modal.setContent(formElement, 'checkout');
   modal.open();
 });
 
 emitter.on('orderStepCompleted', (data: { payment: PaymentMethod; address: string }) => {
-  // Сохраняем выбранный способ оплаты и адрес
   const { payment, address } = data;
   cartModel.setOrderDetails({ payment, address });
 
-  // Используем форму из шаблона
-  const contactsForm = formView.getContactsForm();
-  modal.setContent(contactsForm, 'contacts');
+  const contactsFormInstance = new ContactsForm(emitter);
+  const contactsFormElement = contactsFormInstance.getForm();
+  modal.setContent(contactsFormElement, 'contacts');
 });
 
 emitter.on('formSubmitted', async (data: { email: string; phone: string }) => {
-  // Получаем данные заказа из модели корзины
   const orderDetails = cartModel.getOrderDetails();
   const order: Order = {
     payment: orderDetails.payment,
@@ -123,67 +116,48 @@ emitter.on('formSubmitted', async (data: { email: string; phone: string }) => {
     total: cartModel.getTotal(),
     items: cartModel.getItems().map((item) => item.id),
   };
+
   try {
     await apiClient.createOrder(order);
     cartModel.clearCart();
-    // Показываем сообщение об успешном заказе
-    const successMessage = formView.getSuccessMessage(order.total);
+    const successMessage = getSuccessMessage(order.total);
     modal.setContent(successMessage, 'success');
     emitter.emit('cartUpdated');
+    emitter.emit('orderSuccess');
   } catch (error) {
     alert(`Ошибка оформления заказа: ${(error as Error).message}`);
   }
 });
 
-/**
- * Инициализирует начальное модальное окно после загрузки продуктов.
- */
-function initializeInitialModal() {
-  const initialModal = document.querySelector('.modal.modal_active') as HTMLElement;
-
-  if (initialModal) {
-    const addToCartButton = initialModal.querySelector('.button') as HTMLButtonElement;
-
-    if (addToCartButton) {
-      addToCartButton.addEventListener('click', () => {
-        const product = getProductDataFromInitialModal(initialModal);
-
-        if (product) {
-          cartModel.addItem(product);
-          initialModal.classList.remove('modal_active');
-          emitter.emit('cartUpdated');
-        }
-      });
-    }
+emitter.on('orderSuccess', () => {
+  const successCloseButton = document.querySelector('.order-success__close') as HTMLButtonElement;
+  if (successCloseButton) {
+    successCloseButton.addEventListener('click', () => {
+      modal.close(); // Закрываем модальное окно
+      emitter.emit('navigateToProducts'); // Возвращаемся к списку товаров
+    });
   }
+});
+
+emitter.on('navigateToProducts', () => {
+  productListView.render(productModel.getProducts());
+});
+
+// Функция для получения сообщения об успешном заказе
+function getSuccessMessage(total: number): HTMLElement {
+  const successTemplate = document.getElementById('success') as HTMLTemplateElement;
+  if (!successTemplate) {
+    throw new Error('Template #success not found');
+  }
+  const successMessage = successTemplate.content.firstElementChild!.cloneNode(true) as HTMLElement;
+  const description = successMessage.querySelector('.order-success__description');
+  if (description) description.textContent = `Списано ${total} синапсов`;
+  return successMessage;
 }
 
-/**
- * Получает данные продукта из начального модального окна.
- * @param modalElement - Элемент модального окна.
- * @returns Объект продукта или null, если не найден.
- */
-function getProductDataFromInitialModal(modalElement: HTMLElement): Product | null {
-  const titleElement = modalElement.querySelector('.card__title') as HTMLElement;
-  const title = titleElement?.textContent?.trim() || '';
+// Удаляем функции initializeInitialModal и getProductDataFromInitialModal
 
-  if (title) {
-    // Ищем товар по названию
-    const product = productModel
-      .getProducts()
-      .find((p) => p.title.trim().toLowerCase() === title.trim().toLowerCase());
-    if (product) {
-      return product;
-    } else {
-      alert(`Товар с названием "${title}" не найден`);
-      return null;
-    }
-  }
-
-  return null;
-}
-
-// Обработчики для статических модальных окон
+// Инициализация модальных окон (закрытие по клику на крестик и оверлей)
 const modals = document.querySelectorAll('.modal');
 modals.forEach((modalEl) => {
   const closeButton = modalEl.querySelector('.modal__close') as HTMLElement;
@@ -193,7 +167,6 @@ modals.forEach((modalEl) => {
     });
   }
 
-  // Закрытие модального окна при клике на оверлей
   modalEl.addEventListener('click', (event) => {
     if (event.target === modalEl) {
       modalEl.classList.remove('modal_active');

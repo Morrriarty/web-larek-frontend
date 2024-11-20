@@ -1,4 +1,8 @@
-// src/api/APIClient.ts
+// Файл: /src/api/APIClient.ts
+
+/**
+ * Модуль предоставляет класс `APIClientImpl` для взаимодействия с API сервера.
+ */
 
 import {
   APIClient,
@@ -10,13 +14,13 @@ import {
 } from '../types';
 
 /**
- * Класс `APIClientImpl` реализует интерфейс `APIClient` и отвечает за взаимодействие с API сервера.
+ * Класс `APIClientImpl` реализует методы для работы с API: получение товаров и создание заказа.
  */
 export class APIClientImpl implements APIClient {
   private baseUrl: string;
 
   /**
-   * Создает экземпляр `APIClientImpl`.
+   * Создает экземпляр класса `APIClientImpl`.
    * @param baseUrl - Базовый URL API.
    */
   constructor(baseUrl: string) {
@@ -24,36 +28,34 @@ export class APIClientImpl implements APIClient {
   }
 
   /**
-   * Получает список продуктов с сервера.
-   * @returns Promise с данными списка продуктов.
+   * Получает список товаров.
+   * @returns Список товаров.
    */
   async getProducts(): Promise<ProductList> {
     const response = await fetch(`${this.baseUrl}/product/`);
     if (!response.ok) {
       throw new Error('Не удалось получить список товаров');
     }
-    const data = await response.json();
-    return data as ProductList;
+    return (await response.json()) as ProductList;
   }
 
   /**
-   * Получает информацию о продукте по его ID.
-   * @param id - Идентификатор продукта.
-   * @returns Promise с данными продукта.
+   * Получает информацию о товаре по его ID.
+   * @param id - Идентификатор товара.
+   * @returns Информация о товаре.
    */
   async getProduct(id: string): Promise<Product> {
     const response = await fetch(`${this.baseUrl}/product/${id}`);
     if (!response.ok) {
       throw new Error('Товар не найден');
     }
-    const data = await response.json();
-    return data as Product;
+    return (await response.json()) as Product;
   }
 
   /**
-   * Создает заказ на сервере.
-   * @param order - Объект заказа.
-   * @returns Promise с данными ответа сервера о созданном заказе.
+   * Создает новый заказ.
+   * @param order - Данные заказа.
+   * @returns Ответ сервера о создании заказа.
    */
   async createOrder(order: Order): Promise<OrderResponse> {
     const response = await fetch(`${this.baseUrl}/order`, {
@@ -67,7 +69,6 @@ export class APIClientImpl implements APIClient {
       const errorData: APIError = await response.json();
       throw new Error(errorData.error || 'Не удалось создать заказ');
     }
-    const data = await response.json();
-    return data as OrderResponse;
+    return (await response.json()) as OrderResponse;
   }
 }

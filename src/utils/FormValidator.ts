@@ -1,13 +1,17 @@
-// src/utils/FormValidator.ts
+// Файл: /src/utils/FormValidator.ts
 
 /**
- * Класс `FormValidator` обеспечивает валидацию формы.
+ * Модуль предоставляет класс `FormValidator` для валидации форм.
+ */
+
+/**
+ * Класс `FormValidator` обеспечивает базовую валидацию форм.
  */
 export class FormValidator {
   private formElement: HTMLFormElement;
 
   /**
-   * Создает экземпляр `FormValidator`.
+   * Создает экземпляр класса `FormValidator`.
    * @param formElement - Элемент формы для валидации.
    */
   constructor(formElement: HTMLFormElement) {
@@ -16,7 +20,7 @@ export class FormValidator {
   }
 
   /**
-   * Добавляет обработчики событий для формы.
+   * Добавляет обработчик событий для валидации при вводе данных.
    */
   private attachEventListeners(): void {
     this.formElement.addEventListener('input', () => this.validate());
@@ -24,7 +28,7 @@ export class FormValidator {
 
   /**
    * Валидирует форму.
-   * @returns true, если форма валидна; иначе false.
+   * @returns `true`, если форма валидна, иначе `false`.
    */
   validate(): boolean {
     let isValid = true;

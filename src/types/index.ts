@@ -1,4 +1,8 @@
-// src/types/index.ts
+// Файл: /src/types/index.ts
+
+/**
+ * Модуль содержит типы и интерфейсы, используемые в приложении.
+ */
 
 /**
  * Интерфейс продукта.
@@ -59,34 +63,4 @@ export interface APIClient {
   getProducts(): Promise<ProductList>;
   getProduct(id: string): Promise<Product>;
   createOrder(order: Order): Promise<OrderResponse>;
-}
-
-/**
- * Интерфейс `EventEmitter` для управления событиями.
- */
-export interface EventEmitter {
-  on(event: string, listener: Function): void;
-  off(event: string, listener: Function): void;
-  emit(event: string, ...args: any[]): void;
-}
-
-/**
- * Интерфейс для моделей данных.
- */
-export interface Model {
-  // Методы и свойства модели.
-}
-
-/**
- * Интерфейс для отображений.
- */
-export interface View {
-  // Методы и свойства отображения.
-}
-
-/**
- * Интерфейс для контроллера.
- */
-export interface Controller {
-  // Методы и свойства контроллера.
 }
