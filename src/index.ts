@@ -13,6 +13,8 @@ import { EventEmitter } from './components/base/events';
 import { Product, Order, PaymentMethod } from './types';
 import { API_URL } from './utils/constants';
 import { Page } from './utils/Page';
+
+// Импортируем новые классы форм
 import { ContactsForm } from './views/ContactsForm';
 import { OrderForm } from './views/OrderForm';
 
@@ -50,7 +52,7 @@ emitter.on('productSelected', (productId: string) => {
   const product = productModel.getProductById(productId);
   if (product) {
     const content = productDetailView.render(product);
-    modal.setContent(content);
+    modal.setContent(content, 'product');
     modal.open();
   }
 });
@@ -97,6 +99,7 @@ emitter.on('checkout', () => {
   modal.open();
 });
 
+// Изменяем обработчик на использование нового класса ContactsForm
 emitter.on('orderStepCompleted', (data: { payment: PaymentMethod; address: string }) => {
   const { payment, address } = data;
   cartModel.setOrderDetails({ payment, address });
@@ -133,8 +136,8 @@ emitter.on('orderSuccess', () => {
   const successCloseButton = document.querySelector('.order-success__close') as HTMLButtonElement;
   if (successCloseButton) {
     successCloseButton.addEventListener('click', () => {
-      modal.close(); // Закрываем модальное окно
-      emitter.emit('navigateToProducts'); // Возвращаемся к списку товаров
+      modal.close();
+      emitter.emit('navigateToProducts');
     });
   }
 });
@@ -154,22 +157,3 @@ function getSuccessMessage(total: number): HTMLElement {
   if (description) description.textContent = `Списано ${total} синапсов`;
   return successMessage;
 }
-
-// Удаляем функции initializeInitialModal и getProductDataFromInitialModal
-
-// Инициализация модальных окон (закрытие по клику на крестик и оверлей)
-const modals = document.querySelectorAll('.modal');
-modals.forEach((modalEl) => {
-  const closeButton = modalEl.querySelector('.modal__close') as HTMLElement;
-  if (closeButton) {
-    closeButton.addEventListener('click', () => {
-      modalEl.classList.remove('modal_active');
-    });
-  }
-
-  modalEl.addEventListener('click', (event) => {
-    if (event.target === modalEl) {
-      modalEl.classList.remove('modal_active');
-    }
-  });
-});

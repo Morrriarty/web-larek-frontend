@@ -7,7 +7,7 @@
 import { EventEmitter } from '../components/base/events';
 
 /**
- * Класс `Modal` отвечает за открытие, закрытие и управление содержимым модального окна.
+ * Класс Modal отвечает за управление модальным окном.
  */
 export class Modal {
   private modalElement: HTMLElement;
@@ -16,11 +16,6 @@ export class Modal {
   private emitter: EventEmitter;
   private contentType: string | null = null;
 
-  /**
-   * Создает экземпляр класса `Modal`.
-   * @param modalElement - Элемент модального окна.
-   * @param emitter - Экземпляр EventEmitter для событийного взаимодействия.
-   */
   constructor(modalElement: HTMLElement, emitter: EventEmitter) {
     this.modalElement = modalElement;
     this.emitter = emitter;
@@ -33,9 +28,6 @@ export class Modal {
     this.initEventListeners();
   }
 
-  /**
-   * Инициализирует обработчики событий для модального окна.
-   */
   private initEventListeners(): void {
     // Обработчик кнопки закрытия
     if (this.closeButton) {
@@ -51,43 +43,25 @@ export class Modal {
 
     // Обработчик закрытия по клавише ESC
     document.addEventListener('keydown', this.handleEscapeKey);
-
-    this.emitter.on('closeModal', () => {
-      this.close();
-    });
   }
 
-  /**
-   * Обработчик клавиши ESC для закрытия модального окна.
-   */
   private handleEscapeKey = (event: KeyboardEvent): void => {
     if (event.key === 'Escape' && this.isOpen()) {
       this.close();
     }
   };
 
-  /**
-   * Открывает модальное окно.
-   */
   open(): void {
     this.modalElement.classList.add('modal_active');
     document.body.classList.add('modal-open');
   }
 
-  /**
-   * Закрывает модальное окно.
-   */
   close(): void {
     this.modalElement.classList.remove('modal_active');
     document.body.classList.remove('modal-open');
     this.contentType = null;
   }
 
-  /**
-   * Устанавливает содержимое модального окна.
-   * @param content - Элемент содержимого.
-   * @param contentType - Тип содержимого (опционально).
-   */
   setContent(content: HTMLElement, contentType?: string): void {
     if (this.contentContainer) {
       this.contentContainer.innerHTML = '';
@@ -98,18 +72,10 @@ export class Modal {
     }
   }
 
-  /**
-   * Проверяет, открыто ли модальное окно.
-   * @returns `true`, если модальное окно открыто.
-   */
   isOpen(): boolean {
     return this.modalElement.classList.contains('modal_active');
   }
 
-  /**
-   * Возвращает тип текущего содержимого модального окна.
-   * @returns Тип содержимого или `null`.
-   */
   getContentType(): string | null {
     return this.contentType;
   }
